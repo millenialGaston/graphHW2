@@ -8,16 +8,13 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 def main():
-  gaussData = generativeModel()
-  for i ,gauss in enumerate(gaussData):
-    gaussData[i].plotContours()
+  figures()
   plt.show()
 
-def logisticRegression():
-  pass
-def generativeModel():
+def figures():
   data = list()
   gausData = list()
+  logData = list()
   #The class Data is initialized by passing the relevant string
   for name in ["A", "B", "C"]:
     data.append(Data(name))
@@ -26,6 +23,10 @@ def generativeModel():
   for i, dat in enumerate(data):
     gausData.append(GaussianMixture(dat.train))
     gausData[i].estimateParameters()
+
+  for i, dat in enumerate(data):
+    logData.append(LogisticRegression(dat.train))
+    logData[i].irls()
 
   #Scatter plot of the test data on different figures
   for i, dat in enumerate(data):
@@ -48,25 +49,12 @@ def generativeModel():
     plt.figure(i)
     plt.plot(x1, gauss.train['y'])
     plt.draw()
-
-  return gausData
-
-class Data():
-  def __init__(self, name):
-    #We fetch the data only according to its "letter" name
-    incompletePath = "hwk2data/classification" + name
-
-    train = pd.DataFrame(pd.read_csv(incompletePath + '.train', sep='\t'))
-    test = pd.DataFrame(pd.read_csv(incompletePath + '.test', sep='\t'))
-    train.columns = test.columns = ['x','y','c']
-    # We join x and y data into a numpy array
-    train['X'] = train[['x','y']].values.tolist()
-    test['X'] = test[['x','y']].values.tolist()
-
-    self.train = train
-    self.test = test
-  def saveToCsv():
-    pass
+  for i, dat in enumerate(logData):
+    w = dat.param
+    x1 = [(-w[2]*x2 - w[0])/w[1] for x2 in dat.train['y']]
+    plt.figure(i)
+    plt.plot(x1,dat.train['y'], color="blue")
+    plt.draw()
 
 class GaussianMixture():
   def __init__(self, train):
@@ -115,39 +103,57 @@ class GaussianMixture():
     rv2 = multivariate_normal(test.mu2, cov)
     pass
 
-
 class LogisticRegression():
-  def __ini__(self,train):
+  def __init__(self,train):
     self.train = train
     self.parametersEstimated = False
 
+  def sigmoid(self,z):
+    return 1 / (1 + np.exp(-z))
+  def computeY(self,w):
+    linear = self.X @ w
+    return self.sigmoid(linear)
+  def iterate(self,w) :
+    w.shape = (len(w),1)
+    Y = self.computeY(w)[:,0]
+    C = np.array(self.train['c'])
+    R = np.diag([float(y*(1-y)) for y in Y])
+    z = (self.X @ w)[:,0] - np.linalg.solve(R,(Y-C))
+    lhs  = self.X.T @ R @ self.X
+    rhs =  self.X.T @ R @ z
+    w_new = np.linalg.solve(lhs, rhs)
+    return w_new
+
   def irls(self):
-    X = np.stack(train['X'])
+    X = np.stack(self.train['X'])
+    a = np.ones(len(X))
+    a.shape = (len(a),1)
+    self.X = np.hstack((a,X))
 
-    def __sigmoid(z):
-      return 1 / (1 + np.exp(-z))
+    wList = list()
+    wList.append(np.array([0,0,0]))
+    for i in range(1,8):
+      print(i)
+      wList.append(self.iterate(wList[i-1]))
+    self.param  = wList[7]
+    return wList[7]
 
-    def __sig_of_linear(w,x):
-      return __sigmoid(w.T.dot(x))
+class Data():
+  def __init__(self, name):
+    #We fetch the data only according to its "letter" name
+    incompletePath = "hwk2data/classification" + name
 
-    def __weightingMatrix(self,w):
-      x = self.train['X']
-      sig_of_linear = __sig_of_linear(w,x)
-      return np.diag([sig_of_linear * (1 - sig_of_linear)])
+    train = pd.DataFrame(pd.read_csv(incompletePath + '.train', sep='\t'))
+    test = pd.DataFrame(pd.read_csv(incompletePath + '.test', sep='\t'))
+    train.columns = test.columns = ['x','y','c']
+    # We join x and y data into a numpy array
+    train['X'] = train[['x','y']].values.tolist()
+    test['X'] = test[['x','y']].values.tolist()
 
-    def __zVector(w,self) :
-      R = __weightingMatrix(w)
-      Y = __sigmoid(w.dot(X).T)
-      z = X.dot(w) - np.linalg.solve(R, Y - train['c'])
-      return z
-
-    w_init = np.array([0,0])
-
-
-
-
-
-
+    self.train = train
+    self.test = test
+  def saveToCsv():
+    pass
 if __name__ == '__main__':
   main()
 
