@@ -36,6 +36,7 @@ Now for $\mu_1$:
     l_{\mu_1} = -\frac{1}{2}\sum_{i=1}^N y_i (x_i - \mu_1)\tran \Sigma^{-1}(x_i
     - \mu_1) + const 
 \end{equation}
+%
 Taking the derivative and setting to zero :
 \begin{align*}
     l_{\mu_1}' &= -\frac{1}{2} \sum_{i=1}^N y_i (x_i-\mu_1)\tran(\Lambda + \Lambda\tran)\\
@@ -49,6 +50,7 @@ All in all we have that
     \mu_{1_{MLE}} = \frac{1}{N_1}\sum_{i=1}^N y_i x_i \qquad 
     \mu_{2_{MLE}} = \frac{1}{N_2}\sum_{i=1}^N (1-y_i) x_i
 \end{equation}
+%
 Where the latter is obtained
 following the same steps for $\mu_2$ but replacing $y_i$ by $1-y_i$.
 Indeed, in general,  if we have some vector of
@@ -91,6 +93,7 @@ Finally setting to zero we have:
 \end{equation}
 \textit{Note on notation}: We have used subscript in $x_i$ as indicating the ith sample
 of the random variable and not its ith component.\\
+\clearpage
 
 b) Let $\pi = \pi_1$ and $1-\pi = \pi_2$ for notational convenience. Moreover let the events
 $Y=1$ and $Y=0$ be denoted $C_1$ and $C_2$ respectively for the same reason.\\
@@ -105,12 +108,53 @@ we have that :
 \begin{equation}
 p(C_1 \vert x) = \frac{1}{1+\exp(-\alpha)} \triangleq \sigma (\alpha)
 \end{equation}
-Hence we have a form that looks a lot like logistic regression, where the posterior
-$P(\mathrm {Class} \vert X) = \sigma (f(x))$ and $f(x)$ some function of $x$. However
-the logistic regression is a discriminant classifier and $f(x)$ depends directly on 
-the input data whereas the model we are analyzing is a generative one. Moreover the input
-to the logit function is not directly dependent on $x$ but only through latent variables
-which have themselves to be estimated.
+Now let us examine the expression "$\alpha$", the argument to the logit function
+in this form.
+\begin{align*}
+    \alpha &= \log\left[\frac{p(x\vert C_1)p(C_1)}{p(x\vert C_2)p(C_2)}\right]\\[1ex]
+	 &= \log\left[\frac{\pi_1 \exp(-1/2(x-\mu_1)\tran \Sigma^{-1} (x-\mu_1))}
+											 {\pi_2 \exp(-1/2(x-\mu_2)\tran \Sigma^{-1} (x-\mu_2))}
+										 \right] \\[1ex]
+	 &= \log\left(\frac{\pi_1}{\pi_2}\right)
+										 - 1/2(x-\mu_1)\tran \Sigma^{-1} (x-\mu_1)
+										 + 1/2(x-\mu_2)\tran \Sigma^{-1} (x-\mu_2)
+	 \intertext{And the quadratic terms cancel out so that:}
+	 &= \frac{1}{2}x\tran \Sigma^{-1}\mu_1 
+			-\frac{1}{2}x\tran\Sigma^{-1}\mu_2
+			-\frac{1}{2}\mu_1\tran\Sigma^{-1}\mu_1 
+			+\frac{1}{2}\mu_2\tran\Sigma^{-1}\mu_2
+			 + \log\left(\frac{\pi_1}{\pi_2}\right) 
+\end{align*}
+Now defining the following parameters:
+\begin{equation}
+	w = \Sigma^{-1}(\mu_1 - \mu_2) \qquad
+	w_0 = -\frac{1}{2}\mu_1\tran\Sigma^{-1}\mu_1 
+	+\frac{1}{2}\mu_2\tran\Sigma^{-1}\mu_2
+	 + \log\left(\frac{\pi_1}{\pi_2}\right) 
+\end{equation}
+We get that the class conditionnal can be expressed as the result of applying the
+logit function to an affine transformation in $x$:
+\begin{equation}
+	P(C_1\vert x) = \sigma(w\tran x + w_0)
+\end{equation}
+We can see that the last term in $w_0$ is the $\log$ of the ratio of the priors
+on the classes. We can thus see that under the current assumptions on the distribution
+of $X \vert C_k \sim \No (\mu_k, \Sigma)$ changing the priors will only offset the decision
+boundaries.
+Clearly for $P(C_1\vert x) = \sigma(f(.))$ to be equal to a constant we need the 
+function $f(.)$ to be constant too. Moreover $\sigma(c) = 0.5$ implies 
+that $c$ equals zero. Therefore the decision boundary is the solution to
+the affine equation $w\tran x + w_0 = 0$. The linearity is the result of
+enforcing both class conditionnals to share the same covariance matrix, 
+removing this assumption would result in quadratic boundaries.\\
+So there many similarities between our model and the logistic regression,
+including a linear decision boundary hence they are both "linear".
+However we are dealing with a generative model and the parameters 
+to the affine map were determined by finding the MLE of the underlying
+distributions of $X \vert C_k$ which were "known". 
+In logistic regression the parameters $w$ and $w_0$ to the affine map
+are in themselves computed by MLE. 
+
 
 
 

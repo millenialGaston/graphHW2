@@ -6,50 +6,69 @@ from math import log
 from scipy.stats import multivariate_normal
 from mpl_toolkits.mplot3d import Axes3D
 
-## TODO: Rename objects to indicate type
-def main():
-  A = Data("A")
-  B = Data("B")
-  C = Data("C")
-  AA = gaussianMixture(A.train)
-  BB = gaussianMixture(B.train)
-  CC = gaussianMixture(C.train)
-  #Scatter plot of basic data
-  AA.estimateParameters()
-  groupsList = list()
-  groupsList.append(A.train.groupby('c'))
-  #groupsList.append(A.test.groupby('c'))
-  fig, ax = plt.subplots()
-  for groups in groupsList:
-    for name, group in groups:
-      ax.plot(group.x, group.y, label=name, linestyle="None",marker='o')
 
-  ##Plotting discriminant line:
-  preciMat = np.linalg.inv(AA.Sigma)
-  w = np.linalg.solve(AA.Sigma, AA.mu1 - AA.mu2)
-  ##TODO tranpose to column vectors
-  print(AA.mu1.T.dot(preciMat).dot(AA.mu1))
-  w_0 = - 1/2*(AA.mu1.T.dot(preciMat).dot(AA.mu1)) \
-        + 1/2*(AA.mu2.T.dot(preciMat).dot(AA.mu2)) \
-        + log(AA.pi1/AA.pi2)
-  x1 = [(-w[1]*x2 - w_0)/w[0] for x2 in AA.train['y']]
-  plt.plot(x1, AA.train['y'])
+def main():
+  gaussData = generativeModel()
+  for i ,gauss in enumerate(gaussData):
+    gaussData[i].plotContours()
   plt.show()
+
+def logisticRegression():
+  pass
+def generativeModel():
+  data = list()
+  gausData = list()
+  #The class Data is initialized by passing the relevant string
+  for name in ["A", "B", "C"]:
+    data.append(Data(name))
+
+  #Every instance of a model and its data have their own class
+  for i, dat in enumerate(data):
+    gausData.append(GaussianMixture(dat.train))
+    gausData[i].estimateParameters()
+
+  #Scatter plot of the test data on different figures
+  for i, dat in enumerate(data):
+    groups = dat.test.groupby('c')
+    for name, group in groups:
+        plt.figure(i)
+        plt.plot(group.x, group.y, label=name,
+                 linestyle="None",marker='o',alpha=0.6)
+
+  #Computation of the boundary decision and plotting it on relevant fig
+  for i, gauss in enumerate(gausData):
+    preciMat = np.linalg.inv(gauss.Sigma)
+    w = np.linalg.solve(gauss.Sigma, gauss.mu1 - gauss.mu2)
+    #quadratic Forms in einstein notation
+    w_0 = - 1/2*np.einsum("s,st,t->",gauss.mu1, preciMat, gauss.mu1)\
+          + 1/2*np.einsum("s,st,t->",gauss.mu2, preciMat, gauss.mu2)\
+          + log(gauss.pi1/gauss.pi2)
+    #compute the line p(C_1 | x) = 0.5 for x as a function of y
+    x1 = [(-w[1]*x2 - w_0)/w[0] for x2 in gauss.train['y']]
+    plt.figure(i)
+    plt.plot(x1, gauss.train['y'])
+    plt.draw()
+
+  return gausData
+
 class Data():
   def __init__(self, name):
+    #We fetch the data only according to its "letter" name
     incompletePath = "hwk2data/classification" + name
 
     train = pd.DataFrame(pd.read_csv(incompletePath + '.train', sep='\t'))
     test = pd.DataFrame(pd.read_csv(incompletePath + '.test', sep='\t'))
     train.columns = test.columns = ['x','y','c']
-    # Joining x and y data into an array
-    train['X'] = list(map(np.array, (zip(train['x'], train['y']))))
-    test['X'] = list(map(np.array, (zip(test['x'], test['y']))))
+    # We join x and y data into a numpy array
+    train['X'] = train[['x','y']].values.tolist()
+    test['X'] = test[['x','y']].values.tolist()
 
     self.train = train
     self.test = test
+  def saveToCsv():
+    pass
 
-class gaussianMixture():
+class GaussianMixture():
   def __init__(self, train):
     self.train = train
     self.parametersEstimated = False
@@ -61,8 +80,10 @@ class gaussianMixture():
       self.pi1 = self.N1/self.N
       self.pi2 = self.N2/self.N
     def estMean(self):
-      self.mu1 = np.transpose(sum(self.train['c']*self.train['X'])/self.N)
-      self.mu2 = np.transpose(sum((1-self.train['c'])*self.train['X'])/self.N)
+      self.mu1 = sum([c*np.array(X) for c,X in \
+                      zip(self.train['c'], self.train['X'])])/self.N
+      self.mu2 = sum([(1-c)*np.array(X) for c,X in \
+                      zip(self.train['c'], self.train['X'])])/self.N
     def estVariance(self):
       X = self.train['X']
       C = self.train['c']
@@ -74,32 +95,53 @@ class gaussianMixture():
       estMean(self)
       estVariance(self)
       self.parametersEstimated = True
-
-  def test(self):
+  def plotContours(self):
     self.estimateParameters()
-    cov = test.Sigma
+    cov = self.Sigma
     xx = np.linspace(-10, 10, 500)
     yy = np.linspace(-10, 10, 500)
     X,Y = np.meshgrid(xx,yy)
 
     pos = np.empty(X.shape + (2,))
     pos[:, :, 0] = X; pos[:, :, 1] = Y
-    rv1 = multivariate_normal(test.mu1, cov)
-    rv2 = multivariate_normal(test.mu2, cov)
-    fig, ax = plt.subplots()
-    CS = ax.contour(X,Y,test.pi1*rv1.pdf(pos), levels = [0.1, 0.2, 0.3])
-    CS2 = ax.contour(X,Y, test.pi2*rv2.pdf(pos))
-    plt.show()
-
+    rv1 = multivariate_normal(self.mu1, self.Sigma)
+    rv2 = multivariate_normal(self.mu2, self.Sigma)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.contour(X,Y, self.pi1*rv1.pdf(pos))
+    ax.contour(X,Y, self.pi2*rv2.pdf(pos))
   def sample():
     rv1 = multivariate_normal(test.mu1, cov)
     rv2 = multivariate_normal(test.mu2, cov)
     pass
 
 
+class LogisticRegression():
+  def __ini__(self,train):
+    self.train = train
+    self.parametersEstimated = False
 
+  def irls(self):
+    X = np.stack(train['X'])
 
+    def __sigmoid(z):
+      return 1 / (1 + np.exp(-z))
 
+    def __sig_of_linear(w,x):
+      return __sigmoid(w.T.dot(x))
+
+    def __weightingMatrix(self,w):
+      x = self.train['X']
+      sig_of_linear = __sig_of_linear(w,x)
+      return np.diag([sig_of_linear * (1 - sig_of_linear)])
+
+    def __zVector(w,self) :
+      R = __weightingMatrix(w)
+      Y = __sigmoid(w.dot(X).T)
+      z = X.dot(w) - np.linalg.solve(R, Y - train['c'])
+      return z
+
+    w_init = np.array([0,0])
 
 
 
