@@ -1,6 +1,6 @@
 # Fdb version 3
-["pdflatex"] 1538899729 "graphicalHW2.tex" "graphicalHW2.pdf" "graphicalHW2" 1538899730
-  "/dev/null" 1538663476 0 d41d8cd98f00b204e9800998ecf8427e ""
+["pdflatex"] 1539028644 "graphicalHW2.tex" "graphicalHW2.pdf" "graphicalHW2" 1539028644
+  "/dev/null" 1538938913 0 d41d8cd98f00b204e9800998ecf8427e ""
   "/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1536122179 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/share/texmf-dist/fonts/map/fontname/texfonts.map" 1536122179 3332 103109f5612ad95229751940c61aada0 ""
   "/usr/share/texmf-dist/fonts/tfm/jknappen/ec/ecbx1000.tfm" 1536122179 3584 2d666ecf6d466d8b007246bc2f94d9da ""
@@ -113,8 +113,8 @@
   "/usr/share/texmf-dist/web2c/texmf.cnf" 1536122179 33301 a3134070eacafb10b1f371612ce2650d ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1536857529 2756227 3af771b8c7802fcc4de3c67a29c4e776 ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1536857504 7908119 d3f27f5aeb95c6483c84487643f50359 ""
-  "graphicalHW2.aux" 1538899730 871 69e3f70e96923c2b0b81101f18a669e3 ""
-  "graphicalHW2.tex" 1538899729 7049 b49e9a67b4dc64e336cdd2e0b78dda86 ""
+  "graphicalHW2.aux" 1539028644 871 69e3f70e96923c2b0b81101f18a669e3 ""
+  "graphicalHW2.tex" 1539028641 7288 67e66866a635f17ee25d736f1e6d8ff2 ""
   "page.tex" 1538682986 345 0afd7d1fa72eed04ba3e2a1e915826e3 ""
   "premath.tex" 1538682862 1299 b55de93d39665fdc4645f671f56dc28b ""
   (generated)

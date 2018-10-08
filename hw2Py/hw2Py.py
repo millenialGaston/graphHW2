@@ -21,12 +21,12 @@ def figures():
 
   #Every instance of a model and its data have their own class
   for i, dat in enumerate(data):
-    gausData.append(GaussianMixture(dat.train))
+    gausData.append(GaussianMixture(dat.train,dat.test))
     gausData[i].estimateParameters()
 
   for i, dat in enumerate(data):
-    logData.append(LogisticRegression(dat.train))
-    logData[i].irls()
+    logData.append(LogisticRegression(dat.train,dat.test))
+    logData[i].estimateParameters()
 
   #Scatter plot of the test data on different figures
   for i, dat in enumerate(data):
@@ -38,28 +38,56 @@ def figures():
 
   #Computation of the boundary decision and plotting it on relevant fig
   for i, gauss in enumerate(gausData):
-    preciMat = np.linalg.inv(gauss.Sigma)
-    w = np.linalg.solve(gauss.Sigma, gauss.mu1 - gauss.mu2)
-    #quadratic Forms in einstein notation
-    w_0 = - 1/2*np.einsum("s,st,t->",gauss.mu1, preciMat, gauss.mu1)\
-          + 1/2*np.einsum("s,st,t->",gauss.mu2, preciMat, gauss.mu2)\
-          + log(gauss.pi1/gauss.pi2)
-    #compute the line p(C_1 | x) = 0.5 for x as a function of y
-    x1 = [(-w[1]*x2 - w_0)/w[0] for x2 in gauss.train['y']]
+    x1 = gauss.computeBoundary()
+    missRate = gauss.computeMisclassificationRate()
+    print(missRate)
     plt.figure(i)
-    plt.plot(x1, gauss.train['y'])
+    plt.plot(x1, gauss.test['y'])
     plt.draw()
-  for i, dat in enumerate(logData):
-    w = dat.param
-    x1 = [(-w[2]*x2 - w[0])/w[1] for x2 in dat.train['y']]
+
+  for i, logis in enumerate(logData):
+    x1 = logis.computeBoundary()
+    missRate = logis.computeMisclassificationRate()
+    print(missRate)
     plt.figure(i)
-    plt.plot(x1,dat.train['y'], color="blue")
+    plt.plot(x1,logis.test['y'], color="blue")
     plt.draw()
 
 class GaussianMixture():
-  def __init__(self, train):
+  def __init__(self, train, test):
     self.train = train
+    self.test = test
     self.parametersEstimated = False
+  def plotContours(self):
+    self.estimateParameters()
+    cov = self.Sigma
+    xx = np.linspace(-10, 10, 500)
+    yy = np.linspace(-10, 10, 500)
+    X,Y = np.meshgrid(xx,yy)
+
+    pos = np.empty(X.shape + (2,))
+    pos[:, :, 0] = X; pos[:, :, 1] = Y
+    rv1 = multivariate_normal(self.mu1, self.Sigma)
+    rv2 = multivariate_normal(self.mu2, self.Sigma)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.contour(X,Y, self.pi1*rv1.pdf(pos))
+    ax.contour(X,Y, self.pi2*rv2.pdf(pos))
+  def sample():
+    rv1 = multivariate_normal(test.mu1, cov)
+    rv2 = multivariate_normal(test.mu2, cov)
+    pass
+  def computeLinearParameters(self):
+    self.estimateParameters()
+    preciMat = np.linalg.inv(self.Sigma)
+    w = np.linalg.solve(self.Sigma, self.mu1 - self.mu2)
+    #quadratic Forms in einstein notation
+    w_0 = - 1/2*np.einsum("s,st,t->",self.mu1, preciMat, self.mu1)\
+          + 1/2*np.einsum("s,st,t->",self.mu2, preciMat, self.mu2)\
+          + log(self.pi1/self.pi2)
+    return (w_0,w)
+
+  #Common Interface
   def estimateParameters(self):
     def estHyper(self):
       self.N1 = sum(self.train['c'])
@@ -83,36 +111,40 @@ class GaussianMixture():
       estMean(self)
       estVariance(self)
       self.parametersEstimated = True
-  def plotContours(self):
-    self.estimateParameters()
-    cov = self.Sigma
-    xx = np.linspace(-10, 10, 500)
-    yy = np.linspace(-10, 10, 500)
-    X,Y = np.meshgrid(xx,yy)
 
-    pos = np.empty(X.shape + (2,))
-    pos[:, :, 0] = X; pos[:, :, 1] = Y
-    rv1 = multivariate_normal(self.mu1, self.Sigma)
-    rv2 = multivariate_normal(self.mu2, self.Sigma)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.contour(X,Y, self.pi1*rv1.pdf(pos))
-    ax.contour(X,Y, self.pi2*rv2.pdf(pos))
-  def sample():
-    rv1 = multivariate_normal(test.mu1, cov)
-    rv2 = multivariate_normal(test.mu2, cov)
-    pass
+  def computeBoundary(self):
+    (w_0, w) = self.computeLinearParameters()
+    #compute the line p(C_1 | x) = 0.5 for x as a function of y
+    x1 = [(-w[1]*x2 - w_0)/w[0] for x2 in self.test['y']]
+    return x1
+
+  def computeMisclassificationRate(self):
+    (w_0,w) = self.computeLinearParameters()
+    w = np.hstack([w_0, w])
+    for index, row in self.test.iterrows():
+      x_with_bias = np.hstack([1, row['X']])
+      pC_1lx = sigmoid(x_with_bias @ w)
+      self.test.loc[index, 'GOOD']  = (pC_1lx > 0.5) and row['c'] ==1 or (pC_1lx <= 0.5)
+
+    rate = ((self.test.shape[0] - sum(self.test['GOOD']))/self.test.shape[0])
+    return rate
 
 class LogisticRegression():
-  def __init__(self,train):
+  def __init__(self,train,test):
     self.train = train
+    self.test = test
     self.parametersEstimated = False
+    self.wList = list()
+    self.iterations = 7
+    self.param = 0
+    X = np.stack(self.train['X'])
+    a = np.ones(len(X))
+    a.shape = (len(a),1)
+    self.X = np.hstack((a,X))
 
-  def sigmoid(self,z):
-    return 1 / (1 + np.exp(-z))
   def computeY(self,w):
     linear = self.X @ w
-    return self.sigmoid(linear)
+    return sigmoid(linear)
   def iterate(self,w) :
     w.shape = (len(w),1)
     Y = self.computeY(w)[:,0]
@@ -124,19 +156,29 @@ class LogisticRegression():
     w_new = np.linalg.solve(lhs, rhs)
     return w_new
 
-  def irls(self):
-    X = np.stack(self.train['X'])
-    a = np.ones(len(X))
-    a.shape = (len(a),1)
-    self.X = np.hstack((a,X))
+  #Commmon Inteface
+  def estimateParameters(self):
+    if (not self.parametersEstimated):
+      self.wList.append(np.array([0,0,0]))
+      for i in range(1,self.iterations):
+        self.wList.append(self.iterate(self.wList[i-1]))
 
-    wList = list()
-    wList.append(np.array([0,0,0]))
-    for i in range(1,8):
-      print(i)
-      wList.append(self.iterate(wList[i-1]))
-    self.param  = wList[7]
-    return wList[7]
+      self.param  = self.wList[self.iterations - 1]
+    self.parametersEstimated = True
+    return self.param
+  def computeBoundary(self):
+    self.estimateParameters()
+    w = self.param
+    x1 = [(-w[2]*x2 - w[0])/w[1] for x2 in self.test['y']]
+    return x1
+  def computeMisclassificationRate(self):
+   w = self.estimateParameters()
+   for index, row in self.test.iterrows():
+     x_with_bias = np.hstack([1, row['X']])
+     pC_1lx = sigmoid(x_with_bias @ w)
+     self.test.loc[index, 'GOOD']  = (pC_1lx > 0.5) and row['c'] == 1 or (pC_1lx <= 0.5)
+   rate = ((self.test.shape[0] - sum(self.test['GOOD']))/self.test.shape[0])
+   return rate
 
 class Data():
   def __init__(self, name):
@@ -152,8 +194,10 @@ class Data():
 
     self.train = train
     self.test = test
-  def saveToCsv():
-    pass
+
+def sigmoid(z):
+  return 1 / (1 + np.exp(-z))
+
 if __name__ == '__main__':
   main()
 

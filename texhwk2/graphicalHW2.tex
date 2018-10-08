@@ -113,17 +113,17 @@ in this form.
 \begin{align*}
     \alpha &= \log\left[\frac{p(x\vert C_1)p(C_1)}{p(x\vert C_2)p(C_2)}\right]\\[1ex]
 	 &= \log\left[\frac{\pi_1 \exp(-1/2(x-\mu_1)\tran \Sigma^{-1} (x-\mu_1))}
-											 {\pi_2 \exp(-1/2(x-\mu_2)\tran \Sigma^{-1} (x-\mu_2))}
-										 \right] \\[1ex]
+			 {\pi_2 \exp(-1/2(x-\mu_2)\tran \Sigma^{-1} (x-\mu_2))}
+	     \right] \\[1ex]
 	 &= \log\left(\frac{\pi_1}{\pi_2}\right)
-										 - 1/2(x-\mu_1)\tran \Sigma^{-1} (x-\mu_1)
-										 + 1/2(x-\mu_2)\tran \Sigma^{-1} (x-\mu_2)
+	    - 1/2(x-\mu_1)\tran \Sigma^{-1} (x-\mu_1)
+	    + 1/2(x-\mu_2)\tran \Sigma^{-1} (x-\mu_2)
 	 \intertext{And the quadratic terms cancel out so that:}
 	 &= \frac{1}{2}x\tran \Sigma^{-1}\mu_1 
-			-\frac{1}{2}x\tran\Sigma^{-1}\mu_2
-			-\frac{1}{2}\mu_1\tran\Sigma^{-1}\mu_1 
-			+\frac{1}{2}\mu_2\tran\Sigma^{-1}\mu_2
-			 + \log\left(\frac{\pi_1}{\pi_2}\right) 
+	    -\frac{1}{2}x\tran\Sigma^{-1}\mu_2
+	    -\frac{1}{2}\mu_1\tran\Sigma^{-1}\mu_1 
+	    +\frac{1}{2}\mu_2\tran\Sigma^{-1}\mu_2
+	    +\log\left(\frac{\pi_1}{\pi_2}\right) 
 \end{align*}
 Now defining the following parameters:
 \begin{equation}
@@ -154,7 +154,14 @@ to the affine map were determined by finding the MLE of the underlying
 distributions of $X \vert C_k$ which were "known". 
 In logistic regression the parameters $w$ and $w_0$ to the affine map
 are in themselves computed by MLE. 
+\clearpage
 
+% for the three models: figures for the three datasets with the boundaries and the parameters
+% discussion(misclassification error)  of the three models
+% for QDA figures, parameters, misclass, discussion
+% appendix : code explained
+\clearpage
+% 
 
 
 
