@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from math import log
 from scipy.stats import multivariate_normal
 from mpl_toolkits.mplot3d import Axes3D
+from scipy.optimize import fsolve
 import os
 import errno
 
@@ -32,6 +33,7 @@ def main():
   driver.computeGenerativeModel(plotMe)
   driver.computeLogisticRegression(plotMe)
   driver.computeLinearRegression(plotMe)
+  driver.computeQDA()
   if(plotMe):
     plt.show()
 
@@ -39,7 +41,7 @@ class Driver():
   def __init__(self, pathForFigures):
 
     self.data = list()
-    self.gausData = list()
+    self.genData = list()
     self.logData = list()
     self.linData = list()
     self.qdaData = list()
@@ -65,23 +67,24 @@ class Driver():
 
   def computeGenerativeModel(self, plotMe):
     for i, dat in enumerate(self.data):
-      self.gausData.append(GaussianMixture(dat.train,dat.test))
-      self.gausData[i].estimateParameters()
+      self.genData.append(LDA(dat.train,dat.test))
+      self.genData[i].estimateParameters()
 
     #Computation of the boundary decision and plotting it on relevant fig
     with open("MissRates", "a") as f:
       f.write("Generative Model miss rate : \n")
-      for i, gauss in enumerate(self.gausData):
+      for i, gen in enumerate(self.genData):
 
         #miss rate
-        missRate = gauss.computeMisclassificationRate()
+        missRate = gen.computeMisclassificationRate()
         f.write(str(missRate) + "\n")
 
         #plotting
         if(plotMe):
           fig = plt.figure(i)
-          x1 = gauss.computeBoundary()
-          plt.plot(x1, gauss.test['y'])
+          x1 = gen.computeBoundary()
+          plt.plot(x1, gen.test['y'] , label="Fisher LDA")
+          plt.legend()
           if os.path.exists(self.pathForFigures):
             fig.savefig(self.pathForFigures + 'generativeFig' + str(i))
           else:
@@ -103,8 +106,8 @@ class Driver():
         if(plotMe):
           x1 = logis.computeBoundary()
           fig = plt.figure(i)
-          plt.plot(x1,logis.test['y'], color="blue")
-          plt.draw()
+          plt.plot(x1,logis.test['y'], label="Logistic Regression")
+          plt.legend()
           if os.path.exists(self.pathForFigures):
             fig.savefig(self.pathForFigures + 'logisticRegression' + str(i))
           else:
@@ -124,17 +127,24 @@ class Driver():
         if(plotMe):
           x1 = line.computeBoundary()
           fig = plt.figure(i)
-          plt.plot(x1,line.test['y'], color="red")
-          plt.draw()
+          plt.plot(x1,line.test['y'], label="Linear Regression")
+          plt.legend()
           if os.path.exists(self.pathForFigures):
             fig.savefig(self.pathForFigures + 'LinearRegression' + str(i))
           else:
             fig.savefig('LinearRegression' + str(i))
 
   def computeQDA(self):
-    pass
+    for i, dat in enumerate(self.data):
+      self.qdaData.append(QDA(dat.train,dat.test))
+      self.qdaData[i].estimateParameters()
+    with open("MissRates", "a") as f:
+      f.write("QDA Missclassification Rate: \n")
+      for i, quad in enumerate(self.qdaData):
+        missRate = quad.computeMisclassificationRate()
+        f.write(str(missRate) + "\n")
 
-class GaussianMixture():
+class LDA():
   def __init__(self, train, test):
     self.train = train
     self.test = test
@@ -178,9 +188,9 @@ class GaussianMixture():
       self.pi2 = self.N2/self.N
     def estMean(self):
       self.mu1 = sum([c*np.array(X) for c,X in \
-                      zip(self.train['c'], self.train['X'])])/self.N
+                      zip(self.train['c'], self.train['X'])])/self.N1
       self.mu2 = sum([(1-c)*np.array(X) for c,X in \
-                      zip(self.train['c'], self.train['X'])])/self.N
+                      zip(self.train['c'], self.train['X'])])/self.N2
     def estVariance(self):
       X = self.train['X']
       C = self.train['c']
@@ -195,6 +205,7 @@ class GaussianMixture():
 
   def computeBoundary(self):
     (w_0, w) = self.computeLinearParameters()
+    print(w_0,w)
     #compute the line p(C_1 | x) = 0.5 for x as a function of y
     x1 = [(-w[1]*x2 - w_0)/w[0] for x2 in self.test['y']]
     return x1
@@ -280,16 +291,15 @@ class LinearRegression():
       C = np.array(self.train['c'])
       self.param = pseudoInverse @ C
       self.parametersEstimated = True
-      print(self.param) #TODO
     return self.param
 
   def computeBoundary(self):
     w = self.param
     x1 = [(0.5 - w[2]*x2 - w[0])/w[1] for x2 in self.test['y']]
     return x1
-
   def computeMisclassificationRate(self):
     w = self.estimateParameters()
+    print(w)
     for index, row in self.test.iterrows():
       x_with_bias = np.hstack([1, row['X']])
       pC_1lx = np.inner(w, x_with_bias)
@@ -313,20 +323,39 @@ class QDA():
       self.pi2 = self.N2/self.N
     def estMean(self):
       self.mu1 = sum([c*np.array(X) for c,X in \
-                      zip(self.train['c'], self.train['X'])])/self.N
+                      zip(self.train['c'], self.train['X'])])/self.N1
       self.mu2 = sum([(1-c)*np.array(X) for c,X in \
-                      zip(self.train['c'], self.train['X'])])/self.N
+                      zip(self.train['c'], self.train['X'])])/self.N2
     def estVariance(self):
       X = self.train['X']
       C = self.train['c']
       sumPart_1 = sum([c * np.outer(x - self.mu1, x - self.mu1) for x,c  in zip(X,C)])
+      self.Sigma_1 = sumPart_1/self.N1
       sumPart_2 = sum([(1-c) * np.outer(x - self.mu2, x - self.mu2) for x,c in zip(X,C)])
-      self.Sigma = (sumPart_1 + sumPart_2)/self.N
+      self.Sigma_2 = sumPart_2/self.N2
     if(not self.parametersEstimated):
       estHyper(self)
       estMean(self)
       estVariance(self)
       self.parametersEstimated = True
+  def computeMisclassificationRate(self):
+    self.estimateParameters()
+    detRatio = 1/2 * np.log(np.linalg.det(self.Sigma_2)/ \
+                            np.linalg.det(self.Sigma_1))
+    bernouilliRatio = np.log(self.pi1/self.pi2)
+    inv1 = np.linalg.inv(self.Sigma_1)
+    inv2 = np.linalg.inv(self.Sigma_2)
+    quadMatrix = inv1 - inv2
+    lineMatrix = 1/2*(self.mu1.T @ inv1 - self.mu2.T @ inv2)
+    for index, row in self.test.iterrows():
+      x = np.array(row['X'])
+      x.shape = (2,1)
+      pC_1lx = -1/2*(x.T @ quadMatrix @ x) + x.T @ lineMatrix \
+      + detRatio + bernouilliRatio
+      self.test.loc[index, 'GOOD']  = (pC_1lx[0] > 0) and row['c'] == 1 or\
+          (pC_1lx[0] <= 0)
+    rate = ((self.test.shape[0] - sum(self.test['GOOD']))/self.test.shape[0])
+    return rate
 
 class Data():
   def __init__(self, name):

@@ -1,5 +1,5 @@
 # Fdb version 3
-["pdflatex"] 1539057627 "graphicalHW2.tex" "graphicalHW2.pdf" "graphicalHW2" 1539057627
+["pdflatex"] 1539074251 "graphicalHW2.tex" "graphicalHW2.pdf" "graphicalHW2" 1539074251
   "/dev/null" 1538938913 0 d41d8cd98f00b204e9800998ecf8427e ""
   "/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1536122179 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/share/texmf-dist/fonts/map/fontname/texfonts.map" 1536122179 3332 103109f5612ad95229751940c61aada0 ""
@@ -128,13 +128,13 @@
   "figures/logisticRegression0.png" 1539049625 57718 e90f38d518a62dbadbe9e8c870483b74 ""
   "figures/logisticRegression1.png" 1539049626 83603 0a5bfbb85d4316ca3866c590e46e1ed0 ""
   "figures/logisticRegression2.png" 1539049627 86571 f58b7e63a458180355efde93a6ffac98 ""
-  "graphicalHW2.aux" 1539057627 2311 ab968fd12ade8a1fea099f4b77f5620b ""
-  "graphicalHW2.tex" 1539057626 9220 0120d76a5322050796e3b9bc13739af4 ""
-  "graphicalHW2.toc" 1539057627 645 d103befaa9e98d658cb7ac8f4b983fcf ""
+  "graphicalHW2.aux" 1539074251 2311 b6c98426f01a9fe25b27dc76cc7238bc ""
+  "graphicalHW2.tex" 1539074250 9575 78afae5f0667dba2b38e9311f77a477b ""
+  "graphicalHW2.toc" 1539074251 645 d103befaa9e98d658cb7ac8f4b983fcf ""
   "page.tex" 1538682986 345 0afd7d1fa72eed04ba3e2a1e915826e3 ""
   "premath.tex" 1539033079 1343 3b5cbc84445a5aaa74c6affb24bcca7f ""
   (generated)
-  "graphicalHW2.toc"
-  "graphicalHW2.aux"
-  "graphicalHW2.log"
   "graphicalHW2.pdf"
+  "graphicalHW2.toc"
+  "graphicalHW2.log"
+  "graphicalHW2.aux"
