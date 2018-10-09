@@ -275,10 +275,12 @@ class LinearRegression():
     self.X = np.hstack((a,X))
 
   def estimateParameters(self):
-    pseudoInverse = np.linalg.solve(self.X.T @ self.X, self.X.T)
-    C = np.array(self.train['c'])
-    self.param = pseudoInverse @ C
-    self.parametersEstimated = True
+    if(not self.parametersEstimated):
+      pseudoInverse = np.linalg.solve(self.X.T @ self.X, self.X.T)
+      C = np.array(self.train['c'])
+      self.param = pseudoInverse @ C
+      self.parametersEstimated = True
+      print(self.param) #TODO
     return self.param
 
   def computeBoundary(self):
@@ -294,6 +296,37 @@ class LinearRegression():
       self.test.loc[index, 'GOOD']  = (pC_1lx > 0.5) and row['c'] == 1 or (pC_1lx <= 0.5)
     rate = ((self.test.shape[0] - sum(self.test['GOOD']))/self.test.shape[0])
     return rate
+
+class QDA():
+  def __init__(self, train, test):
+    self.train = train
+    self.test = test
+    self.parametersEstimated = False
+
+  #Common Interface
+  def estimateParameters(self):
+    def estHyper(self):
+      self.N1 = sum(self.train['c'])
+      self.N2 = sum(1 - self.train['c'])
+      self.N = self.N1 + self.N2
+      self.pi1 = self.N1/self.N
+      self.pi2 = self.N2/self.N
+    def estMean(self):
+      self.mu1 = sum([c*np.array(X) for c,X in \
+                      zip(self.train['c'], self.train['X'])])/self.N
+      self.mu2 = sum([(1-c)*np.array(X) for c,X in \
+                      zip(self.train['c'], self.train['X'])])/self.N
+    def estVariance(self):
+      X = self.train['X']
+      C = self.train['c']
+      sumPart_1 = sum([c * np.outer(x - self.mu1, x - self.mu1) for x,c  in zip(X,C)])
+      sumPart_2 = sum([(1-c) * np.outer(x - self.mu2, x - self.mu2) for x,c in zip(X,C)])
+      self.Sigma = (sumPart_1 + sumPart_2)/self.N
+    if(not self.parametersEstimated):
+      estHyper(self)
+      estMean(self)
+      estVariance(self)
+      self.parametersEstimated = True
 
 class Data():
   def __init__(self, name):

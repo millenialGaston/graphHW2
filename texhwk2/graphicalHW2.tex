@@ -2,10 +2,16 @@
 \begin{document}
 \input{page.tex}
 \newcommand{\No}{\mathcal{N}}
+\graphicspath{{figures/}}
 
-\section{Generative Model}
-$Y \sim \mathrm{Bernouilli}(\pi), \quad X\vert Y = j \sim \mathcal N (\mu_j, \Sigma)$\\[1ex]
-First let us write the two joint distributions implied by the definition:
+\tableofcontents
+\newpage
+
+
+\section{Generative Model and Theoretical Results}
+$Y \sim \mathrm{Bernouilli}(\pi), \quad X\vert Y = j \sim \mathcal N (\mu_j,
+\Sigma)$\\[1ex] First let us write the two joint distributions implied by the
+definition:
 \begin{align*}
     P(x_i, Y = 1) &= P(x_i \vert Y = 1)P(Y=1) = \pi\No(x_i \vert \mu_1, \Sigma)\\
     P(x_i ,Y = 0) &= P(x_i \vert Y = 0)P(Y=0) = (1-\pi) \No (x_i \vert \mu_2, \Sigma)
@@ -62,8 +68,10 @@ For the MLE estimate of the covariance matrix we consider the relevant
 terms of the "sum expansion" of the log-likelihood which gives:
 \begin{equation}
     l_{\Sigma}(\theta) = \frac{N}{2} \log \abs {\Sigma^{-1}}
-			-\frac{1}{2} \sum_I y_i (x_i - \mu_1)\tran \Sigma^{-1}(x_i - \mu_1)
-			 -\frac{1}{2} \sum_I (1-y_i)(x_i - \mu_2)\tran \Sigma^{-1} (x_i - \mu_2) 
+			-\frac{1}{2} \sum_I y_i (x_i - \mu_1)\tran 
+			    \Sigma^{-1}(x_i - \mu_1)
+			 -\frac{1}{2} \sum_I (1-y_i)(x_i - \mu_2)\tran 
+			    \Sigma^{-1} (x_i - \mu_2) 
 \end{equation}
 
 Taking the derivative with respect to $\Sigma$:
@@ -95,16 +103,18 @@ Finally setting to zero we have:
 of the random variable and not its ith component.\\
 \clearpage
 
-b) Let $\pi = \pi_1$ and $1-\pi = \pi_2$ for notational convenience. Moreover let the events
-$Y=1$ and $Y=0$ be denoted $C_1$ and $C_2$ respectively for the same reason.\\
+b) Let $\pi = \pi_1$ and $1-\pi = \pi_2$ for notational convenience. Moreover
+let the events $Y=1$ and $Y=0$ be denoted $C_1$ and $C_2$ respectively for the
+same reason.\\
 By Baye's theorem we have:
 \begin{align}
-    p(C_1 \vert x) &= \frac{p(x\vert C_1)P(C_1)}{p(x\vert C_1)P(C_1) + p(x\vert C_2)P(C_2)}\\[2ex]
+    p(C_1 \vert x) &= \frac{p(x\vert C_1)P(C_1)}{p(x\vert C_1)P(C_1) +
+    p(x\vert C_2)P(C_2)}\\[2ex]
 		   &= \frac{\pi_1 \No (\mu_1, \Sigma) }{\pi_1 \No (\mu_1, \Sigma) 
 			    +\pi_2 \No (\mu_2, \Sigma) }
 \end{align}
-Now letting $ \alpha \triangleq \log \frac{\pi_1 \No (\mu_1, \Sigma)}{\pi_2 \No (\mu_2, \Sigma) }$
-we have that :
+Now letting $ \alpha \triangleq \log \frac{\pi_1 \No (\mu_1, \Sigma)}{\pi_2 \No
+(\mu_2, \Sigma) }$ we have that :
 \begin{equation}
 p(C_1 \vert x) = \frac{1}{1+\exp(-\alpha)} \triangleq \sigma (\alpha)
 \end{equation}
@@ -156,12 +166,86 @@ In logistic regression the parameters $w$ and $w_0$ to the affine map
 are in themselves computed by MLE. 
 \clearpage
 
-% for the three models: figures for the three datasets with the boundaries and the parameters
-% discussion(misclassification error)  of the three models
-% for QDA figures, parameters, misclass, discussion
-% appendix : code explained
+\section{Experimental Results}
+\subsection{Generative Model}
+\includegraphics[height= 0.3\textheight]{generativeFig0.png}
+\includegraphics[height= 0.3\textheight]{generativeFig1.png}
+\begin{center}
+\includegraphics[height= 0.3\textheight]{generativeFig2.png}
+\end{center}
+\begin{align*}
+  \Sigma_A  = \begin{bmatrix} 4.12 & -1.66\\ -1.66 &  0.783 \end{bmatrix} \qquad
+  \Sigma_B  = \begin{bmatrix} 6.05 & -0.921\\ -0.921 & 1.98 \end{bmatrix} \qquad
+  \Sigma_C  = \begin{bmatrix} 4.79  & -0.734\\ -0.734 &  5.39 \end{bmatrix}
+\end{align*}
+
+\begin{alignat*}{3}
+    \mu_{A1} &=  [ -0.879, 0.281 ]
+    \qquad &\mu_{A2} &=  [ 1.95, -0.600 ]\\
+    \mu_{B1} &= [ -1.60, 0.542 ]
+    \qquad &\mu_{B2} &= [ 1.68, -0.419 ]\\
+    \mu_{C1} &=  [ -1.84, -0.603 ]
+    \qquad &\mu_{C2} &= [ 1.05, -0.315 ]\\
+\end{alignat*}
+\clearpage
+
+%
+\subsection{Logistic Regression}
+\includegraphics[height= 0.3\textheight]{logisticRegression0.png}
+\includegraphics[height= 0.3\textheight]{logisticRegression1.png}
+\begin{center}
+\includegraphics[height= 0.3\textheight]{logisticRegression2.png}
+\end{center}
+
+\begin{equation}
+  w_1 = [ -1.22, -7.79, -12.9] \qquad 
+  w_2 = [ 1.32, -1.68, 1.01] \qquad
+  w_3 = [ 0.940 -2.18  0.692]
+\end{equation}
 \clearpage
 % 
+\subsection{Linear Regression}
+\includegraphics[height= 0.3\textheight]{LinearRegression0.png}
+\includegraphics[height= 0.3\textheight]{LinearRegression1.png}
+\begin{center}
+\includegraphics[height= 0.3\textheight]{LinearRegression2.png}
+\end{center}
+
+\begin{equation}
+w_1 = [ 0.492, -0.264, -0.373] \qquad
+w_2 = [ 0.499, -0.104,  0.0519] \qquad
+w_3 = [ 0.507, -0.128, -0.0173]
+\end{equation}
+\clearpage
+
+\subsection{QDA}
+\clearpage
+
+\subsection{Comparison and Discussion of Models}
+\begin{figure}[htbp!]
+\begin{center}
+\begin{tabular}{| c | c | c | c |}
+\hline
+&A & B & C\\
+\hline
+Linear Generative Model &0.00800& 0.00900 & 0.0370\\
+\hline
+Logistic Regression & 0.0113 &  0.0270 & 0.00900\\
+\hline
+Linear Regression & 0.0133 & 0.00900 & 0.0207\\
+\hline
+QDA & . & . &\\
+\hline
+\end{tabular}
+\end{center}
+\end{figure}
+
+\clearpage
+\section{Code}
+
+
+
+
 
 
 
