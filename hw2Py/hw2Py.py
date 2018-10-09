@@ -5,53 +5,134 @@ import matplotlib.pyplot as plt
 from math import log
 from scipy.stats import multivariate_normal
 from mpl_toolkits.mplot3d import Axes3D
+import os
+import errno
 
+
+
+#TODO make seperate figures for different algos
+#For the moment run as interactive if more
+#tha one algo is ran, this will plot all
+#decision boundaries on the same scatter plots
+#of the data but not overwrite the ones saved
+#for tex generation
 
 def main():
-  figures()
-  plt.show()
 
-def figures():
-  data = list()
-  gausData = list()
-  logData = list()
-  #The class Data is initialized by passing the relevant string
-  for name in ["A", "B", "C"]:
-    data.append(Data(name))
+  interactive = True
 
-  #Every instance of a model and its data have their own class
-  for i, dat in enumerate(data):
-    gausData.append(GaussianMixture(dat.train,dat.test))
-    gausData[i].estimateParameters()
+  pathForFigures = "../texhwk2/figures/"
+  directory = "./dump/"
+  if interactive:
+    pathForFigures = createFolder(directory)
 
-  for i, dat in enumerate(data):
-    logData.append(LogisticRegression(dat.train,dat.test))
-    logData[i].estimateParameters()
+  plotMe = True
+  driver = Driver(pathForFigures)
+  driver.scatter()
+  driver.computeGenerativeModel(plotMe)
+  driver.computeLogisticRegression(plotMe)
+  driver.computeLinearRegression(plotMe)
+  if(plotMe):
+    plt.show()
+
+class Driver():
+  def __init__(self, pathForFigures):
+
+    self.data = list()
+    self.gausData = list()
+    self.logData = list()
+    self.linData = list()
+    self.qdaData = list()
+    self.pathForFigures = pathForFigures
+
+    #The class Data is initialized by passing the relevant string
+    for name in ["A", "B", "C"]:
+      self.data.append(Data(name))
+
+    #Overwrite old values since the file will be opened in append mode 
+    f = open("MissRates","w")
+    f.close()
 
   #Scatter plot of the test data on different figures
-  for i, dat in enumerate(data):
-    groups = dat.test.groupby('c')
-    for name, group in groups:
-        plt.figure(i)
-        plt.plot(group.x, group.y, label=name,
-                 linestyle="None",marker='o',alpha=0.6)
+  def scatter(self):
+    for i, dat in enumerate(self.data):
+      groups = dat.test.groupby('c')
+      markers = ['o', 'x']
+      for (name, group), marker in zip(groups, markers):
+          fig = plt.figure(i)
+          plt.plot(group.x, group.y, label=name,
+                   linestyle="None",marker=marker,alpha=0.6)
 
-  #Computation of the boundary decision and plotting it on relevant fig
-  for i, gauss in enumerate(gausData):
-    x1 = gauss.computeBoundary()
-    missRate = gauss.computeMisclassificationRate()
-    print(missRate)
-    plt.figure(i)
-    plt.plot(x1, gauss.test['y'])
-    plt.draw()
+  def computeGenerativeModel(self, plotMe):
+    for i, dat in enumerate(self.data):
+      self.gausData.append(GaussianMixture(dat.train,dat.test))
+      self.gausData[i].estimateParameters()
 
-  for i, logis in enumerate(logData):
-    x1 = logis.computeBoundary()
-    missRate = logis.computeMisclassificationRate()
-    print(missRate)
-    plt.figure(i)
-    plt.plot(x1,logis.test['y'], color="blue")
-    plt.draw()
+    #Computation of the boundary decision and plotting it on relevant fig
+    with open("MissRates", "a") as f:
+      f.write("Generative Model miss rate : \n")
+      for i, gauss in enumerate(self.gausData):
+
+        #miss rate
+        missRate = gauss.computeMisclassificationRate()
+        f.write(str(missRate) + "\n")
+
+        #plotting
+        if(plotMe):
+          fig = plt.figure(i)
+          x1 = gauss.computeBoundary()
+          plt.plot(x1, gauss.test['y'])
+          if os.path.exists(self.pathForFigures):
+            fig.savefig(self.pathForFigures + 'generativeFig' + str(i))
+          else:
+            fig.savefig('generativeFig' + str(i))
+
+  def computeLogisticRegression(self,plotMe):
+    for i, dat in enumerate(self.data):
+      self.logData.append(LogisticRegression(dat.train,dat.test))
+      self.logData[i].estimateParameters()
+
+    with open("MissRates", "a") as f:
+      f.write("Logistic Regression Misclassification Rate: \n")
+      for i, logis in enumerate(self.logData):
+
+        #missRate
+        missRate = logis.computeMisclassificationRate()
+        f.write(str(missRate) + "\n")
+
+        if(plotMe):
+          x1 = logis.computeBoundary()
+          fig = plt.figure(i)
+          plt.plot(x1,logis.test['y'], color="blue")
+          plt.draw()
+          if os.path.exists(self.pathForFigures):
+            fig.savefig(self.pathForFigures + 'logisticRegression' + str(i))
+          else:
+            fig.savefig('LogisticRegression' + str(i))
+
+  def computeLinearRegression(self,plotMe):
+    for i, dat in enumerate(self.data):
+      self.linData.append(LinearRegression(dat.train,dat.test))
+      self.linData[i].estimateParameters()
+    with open("MissRates", "a") as f:
+      f.write("Linear Regression Misclassification Rate: \n")
+      for i, line in enumerate(self.linData):
+
+        missRate = line.computeMisclassificationRate()
+        f.write(str(missRate) + "\n")
+
+        if(plotMe):
+          x1 = line.computeBoundary()
+          fig = plt.figure(i)
+          plt.plot(x1,line.test['y'], color="red")
+          plt.draw()
+          if os.path.exists(self.pathForFigures):
+            fig.savefig(self.pathForFigures + 'LinearRegression' + str(i))
+          else:
+            fig.savefig('LinearRegression' + str(i))
+
+  def computeQDA(self):
+    pass
 
 class GaussianMixture():
   def __init__(self, train, test):
@@ -166,11 +247,13 @@ class LogisticRegression():
       self.param  = self.wList[self.iterations - 1]
     self.parametersEstimated = True
     return self.param
+
   def computeBoundary(self):
     self.estimateParameters()
     w = self.param
     x1 = [(-w[2]*x2 - w[0])/w[1] for x2 in self.test['y']]
     return x1
+
   def computeMisclassificationRate(self):
    w = self.estimateParameters()
    for index, row in self.test.iterrows():
@@ -179,6 +262,38 @@ class LogisticRegression():
      self.test.loc[index, 'GOOD']  = (pC_1lx > 0.5) and row['c'] == 1 or (pC_1lx <= 0.5)
    rate = ((self.test.shape[0] - sum(self.test['GOOD']))/self.test.shape[0])
    return rate
+
+class LinearRegression():
+  def __init__(self,train,test):
+    self.train = train
+    self.test = test
+    self.parametersEstimated = False
+    self.param = 0
+    X = np.stack(self.train['X'])
+    a = np.ones(len(X))
+    a.shape = (len(a),1)
+    self.X = np.hstack((a,X))
+
+  def estimateParameters(self):
+    pseudoInverse = np.linalg.solve(self.X.T @ self.X, self.X.T)
+    C = np.array(self.train['c'])
+    self.param = pseudoInverse @ C
+    self.parametersEstimated = True
+    return self.param
+
+  def computeBoundary(self):
+    w = self.param
+    x1 = [(0.5 - w[2]*x2 - w[0])/w[1] for x2 in self.test['y']]
+    return x1
+
+  def computeMisclassificationRate(self):
+    w = self.estimateParameters()
+    for index, row in self.test.iterrows():
+      x_with_bias = np.hstack([1, row['X']])
+      pC_1lx = np.inner(w, x_with_bias)
+      self.test.loc[index, 'GOOD']  = (pC_1lx > 0.5) and row['c'] == 1 or (pC_1lx <= 0.5)
+    rate = ((self.test.shape[0] - sum(self.test['GOOD']))/self.test.shape[0])
+    return rate
 
 class Data():
   def __init__(self, name):
@@ -197,6 +312,14 @@ class Data():
 
 def sigmoid(z):
   return 1 / (1 + np.exp(-z))
+
+def createFolder(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        return directory
+    except OSError:
+        print ('Error: Creating directory. ' +  directory)
 
 if __name__ == '__main__':
   main()
